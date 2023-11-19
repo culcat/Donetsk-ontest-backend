@@ -43,7 +43,7 @@ const router = express.Router();
  */
 /**
  * @openapi
- * /api/auth:
+ * /api/register:
  *   post:
  *     summary: Регистрация
  *     tags:
@@ -115,6 +115,37 @@ const router = express.Router();
  *       '500':
  *         description: Внутренняя ошибка сервера
  */
+/**
+ * @openapi
+ * /api/estimate:
+ *   put:
+ *     summary: Обновление оценки пользователя
+ *     tags:
+ *       - Пользователи
+ *     parameters:
+ *       - in: query
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Имя пользователя
+ *       - in: query
+ *         name: estimate
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: Новая  пользователя
+ *     responses:
+ *       '200':
+ *         description: Оценка пользователя успешно обновлена
+ *       '400':
+ *         description: Ошибка валидации данных
+ *       '401':
+ *         description: Пользователь не найден
+ *       '500':
+ *         description: Внутренняя ошибка сервера
+ */
+
 
 function generateSecretKey():string{
     const secretKey = crypto.randomBytes(64).toString('hex');
@@ -124,25 +155,24 @@ const secretkey = generateSecretKey()
 console.log(secretkey);
 
 
-router.post('/login', async (req: Request, res: Response) => {
-    try {
-      const { username, password } = req.body;
-      console.log(secretkey);
-  
-      const user = await db.getUserByUsername(username as string);
-  
-      if (!user || user.password !== password) {
-        return res.status(401).json({ error: 'Неверное имя пользователя или пароль' });
-      }
-  
-      const token = jwt.sign({ username: user.username }, secretkey, { expiresIn: '1h' });
-  
-      res.status(200).json({ token });
-    } catch (error) {
-      console.error('Error during login:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+router.get('/login', async (req: Request, res: Response) => {
+  try {
+    const { username, password } = req.query;
+
+    const user = await db.getUserByUsername(username as string);
+
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: 'Неверное имя пользователя или пароль' });
     }
-  });
+
+    const token = jwt.sign({ username }, secretkey, { expiresIn: '1h' });
+
+    res.status(200).json({ token,user });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
   
   
   router.get('/verify', async (req: Request, res: Response) => {
@@ -179,7 +209,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
 
   
-  router.post('/auth', async (req: Request, res: Response) => {
+  router.post('/register', async (req: Request, res: Response) => {
     try {
       const { username, password, name, lastname } = req.body;
   
@@ -198,12 +228,36 @@ router.post('/login', async (req: Request, res: Response) => {
       // Generate a token for the newly registered user
       const token = jwt.sign({ username }, secretkey, { expiresIn: '1h' });
   
-      res.status(201).json({ id: userId, username, token });
+      res.status(201).json({  userId, username, password, name, lastname,token });
     } catch (error) {
       console.error('Error creating user:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });
+  router.put('/estimate', async (req: Request, res: Response) => {
+    try {
+      const { username, estimate } = req.query;
+  
+      // Validate input
+      if (!username || !estimate || isNaN(parseFloat(estimate as string))) {
+        return res.status(400).json({ error: 'Invalid or missing estimate value' });
+      }
+  
+      // Update the user's estimate in the database
+      const result = await db.updateUserEstimate(username as string, parseFloat(estimate as string));
+  
+      // Check if the user was found and the estimate was updated
+      if (!result) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+  
+      res.status(200).json({ message: 'User estimate updated successfully' });
+    } catch (error) {
+      console.error('Error updating user estimate:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+  
   
 
   

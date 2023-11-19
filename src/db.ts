@@ -45,3 +45,68 @@ export async function getUserByUsername(username: string) {
     throw error;
   }
 }
+export async function updateUserEstimate(username: string, newEstimate: number) {
+  const queryText = 'UPDATE users SET estimate = COALESCE(estimate, 0) + $1 WHERE login = $2 RETURNING *';
+  const values = [newEstimate, username];
+
+  try {
+    const result = await db.oneOrNone(queryText, values);
+    return result; // Returns null if the user is not found, otherwise returns the updated user
+  } catch (error) {
+    console.error('Error updating user estimate:', error);
+    throw error;
+  }
+}
+
+
+
+export async function getButtons() {
+  const queryText = 'SELECT * FROM buttons';
+  try {
+      const buttons = await db.any(queryText);
+      return buttons;
+  } catch (error) {
+      console.error('Error during button retrieval:', error);
+      throw error;
+  }
+}
+export async function getFundament() {
+  const queryText = 'SELECT * FROM fundament';
+  try {
+    const fundament = await db.any(queryText);
+
+
+      return fundament;
+    }
+
+  
+   catch (error) {
+    console.error('Error during fundament retrieval:', error);
+    throw error;
+  }
+}
+
+export async function getFundamentID(id:string) {
+  const queryText = 'SELECT * FROM materials WHERE type = $1';
+  const value = [id]
+  try {
+    const fundament = await db.any(queryText,value);
+
+
+      return fundament;
+    }
+
+  
+   catch (error) {
+    console.error('Error during fundament retrieval:', error);
+    throw error;
+  }
+}
+export async function getMaterialPrice(materialId: number): Promise<number> {
+  try {
+    const result = await db.one('SELECT material_price FROM materials WHERE id = $1', materialId);
+    return result.material_price;
+  } catch (error) {
+    throw error;
+  }
+}

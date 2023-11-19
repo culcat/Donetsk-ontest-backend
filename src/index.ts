@@ -3,7 +3,9 @@ import bodyParser from 'body-parser';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUI from 'swagger-ui-express';
 import userRoutes from './Routes/users'
-
+import buttonsRouter from './Routes/buttons'
+import fundamentRouter from './Routes/fundament'
+import clalcRouter from './Routes/calculate'
 const app = express();
 const port = 3000;
 const swaggerDefinition = {
@@ -25,7 +27,9 @@ app.use(bodyParser.json());
 app.use('/documentation', swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 app.use('/api', userRoutes)
-
+app.use('/api', fundamentRouter)
+app.use('/api', buttonsRouter)
+app.use('/api',clalcRouter)
 app.get('/', (req: Request, res: Response) => {
   res.send('Привет, мир!');
 });
