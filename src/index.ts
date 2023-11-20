@@ -7,7 +7,7 @@ import buttonsRouter from './Routes/buttons'
 import fundamentRouter from './Routes/fundament'
 import clalcRouter from './Routes/calculate'
 const app = express();
-const port = 3000;
+const port = 3030;
 const swaggerDefinition = {
     openapi: '3.0.0',
     info: {

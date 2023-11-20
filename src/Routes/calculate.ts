@@ -1,6 +1,7 @@
 import express, { Request, Response, Router } from "express";
 import * as db from '../db';
 import Material from "../types/calcbuild";
+import { saveOrderToHistory } from "../db";
 
 const router = express.Router();
 /**
@@ -136,7 +137,53 @@ const router = express.Router();
  *             example:
  *               error: 'Internal Server Error'
  */
-
+/**
+ * @openapi
+ * /api/orderhistory:
+ *   get:
+ *     summary: Получение истории заказов пользователя
+ *     tags:
+ *       - Заказы
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID пользователя для получения истории заказов
+ *     responses:
+ *       '200':
+ *         description: Успешный запрос
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 orderHistory:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       orderId:
+ *                         type: integer
+ *                         description: ID заказа
+ *                       orderDetails:
+ *                         type: string
+ *                         description: Детали заказа
+ *                       
+ *       '400':
+ *         description: Неверный ввод
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: 'Invalid user ID provided'
+ *       '500':
+ *         description: Внутренняя ошибка сервера
+ *         content:
+ *           application/json:
+ *             example:
+ *               error: 'Internal Server Error'
+ */
 
 
 router.get('/schema',async (req:Request,res: Response) => {
@@ -187,7 +234,9 @@ router.post('/calcmaterial', async (req: Request, res: Response) => {
     try {
         // Extracting the materials array and house_info from the request body
         const { materials, house_info } = req.body;
-
+        const userID: string | number = req.query.userID as string | number;
+        console.log(userID);
+        
         // Checking if materials is an array and house_info is present
         if (Array.isArray(materials) && house_info) {
             // Array to store the results for each material
@@ -216,17 +265,23 @@ router.post('/calcmaterial', async (req: Request, res: Response) => {
 
                 // Fetching width and length from house_info
                 const { width, length } = house_info;
-
+                const square = width * length
                 // Calculating the total price for the entire house
-                const houseTotalPrice = totalPrice * width * length;
+                const houseTotalPrice = totalPrice * square
 
                 // Extracting material_type_id from the current material
                 const materialTypeId = material.material_type_id;
-
+                const materialID = material.selected_material_id
+               
                 // Adding the result to the array
-                results.push({ total_price: houseTotalPrice, material_type_id: materialTypeId });
+                results.push({ price: houseTotalPrice, material_type_id: materialTypeId,material_ID:materialID });
             }
-
+            if(userID != 0){
+                const totalOrderPrice = results.reduce((acc, result) => acc + result.price, 0);
+                const materialIds = results.map(result => result.material_ID);
+                const materialTypes = results.map(result => result.material_type_id);
+                const orderDate = new Date()
+                await saveOrderToHistory(Number(userID), totalOrderPrice, materialIds,materialTypes);}
             // Sending the array of results as a JSON response
             res.json({material:results});
         } else {
@@ -240,7 +295,18 @@ router.post('/calcmaterial', async (req: Request, res: Response) => {
     }
 });
 
+router.get('/orderhistory', async (req: Request, res: Response) => {
+    try {
+        const userID: string | number = req.query.userID as string | number;
 
-
+        const orderHistory = await db.getOrderHistory(String(userID));
+        res.json({ orderHistory });
+        
+        
+    } catch (error) {
+        // Handle errors
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 export default router;

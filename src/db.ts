@@ -110,3 +110,60 @@ export async function getMaterialPrice(materialId: number): Promise<number> {
     throw error;
   }
 }
+// Example function to save order to history
+export async function saveOrderToHistory(userId: number,totalOrderPrice: number, materialTypeIds: number[],materialTypes: number[]) {
+  try {
+      const query = `
+          INSERT INTO order_history (user_id, total_price, material_type_ids,material_types)
+          VALUES ($1, $2, $3,$4)
+      `;
+
+      await db.none(query, [userId,totalOrderPrice, materialTypeIds,materialTypes]);
+  } catch (error) {
+      console.error('Error saving order to history:', error);
+      throw error;
+  }
+}
+
+// Example function to get order history
+// export async function getOrderHistory(userId: number) {
+//   try {
+//       const query = `
+//           SELECT id, user_id, order_date, total_price, material_type_ids FROM order_history
+//           WHERE user_id = $1
+//           ORDER BY order_date DESC
+//       `;
+
+//       return await db.any(query, [userId]);
+//   } catch (error) {
+//       console.error('Error getting order history:', error);
+//       throw error;
+//   }
+// }
+export async function getOrderHistory(userId: string) {
+  try {
+    const query = `
+      SELECT 
+        oh.id AS order_id, 
+        oh.total_price,
+        oh.material_types AS material_type_id, -- Assuming material_types is the correct column
+        m.id AS material_id, 
+        m.name AS material_name, 
+        m.img AS material_img,
+        m.material_price, -- Add material_price to the SELECT clause
+        (oh.order_date AT TIME ZONE 'Europe/Moscow' + interval '3 hours') AS adjusted_order_date
+      FROM 
+        order_history oh
+        JOIN materials m ON m.id = ANY(oh.material_type_ids)
+      WHERE 
+        oh.user_id = $1
+    `;
+
+    return await db.any(query, [userId]);
+  } catch (error) {
+    console.error('Error getting order history:', error);
+    throw error;
+  }
+}
+
+
