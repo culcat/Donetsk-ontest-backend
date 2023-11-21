@@ -6,6 +6,8 @@ import userRoutes from './Routes/users'
 import buttonsRouter from './Routes/buttons'
 import fundamentRouter from './Routes/fundament'
 import clalcRouter from './Routes/calculate'
+import helpRouter from './Routes/help'
+import tabRouter from './Routes/tabs'
 const app = express();
 const port = 3030;
 const swaggerDefinition = {
@@ -30,6 +32,8 @@ app.use('/api', userRoutes)
 app.use('/api', fundamentRouter)
 app.use('/api', buttonsRouter)
 app.use('/api',clalcRouter)
+app.use('/api',helpRouter)
+app.use('/api',tabRouter)
 app.get('/', (req: Request, res: Response) => {
   res.send('Привет, мир!');
 });

@@ -265,7 +265,7 @@ router.post('/calcmaterial', async (req: Request, res: Response) => {
 
                 // Fetching width and length from house_info
                 const { width, length } = house_info;
-                const square = width * length
+                var square = width * length
                 // Calculating the total price for the entire house
                 const houseTotalPrice = totalPrice * square
 
@@ -274,17 +274,21 @@ router.post('/calcmaterial', async (req: Request, res: Response) => {
                 const materialID = material.selected_material_id
                
                 // Adding the result to the array
-                results.push({ price: houseTotalPrice, material_type_id: materialTypeId,material_ID:materialID });
+                results.push({ price: houseTotalPrice, material_type_id: materialTypeId,material_ID:materialID,material_price:totalPrice*square});
             }
+            
             if(userID != 0){
                 const totalOrderPrice = results.reduce((acc, result) => acc + result.price, 0);
                 const materialIds = results.map(result => result.material_ID);
                 const materialTypes = results.map(result => result.material_type_id);
+                const materialPrices = results.map(result => result.material_price);
+                
                 const orderDate = new Date()
-                await saveOrderToHistory(Number(userID), totalOrderPrice, materialIds,materialTypes);}
+                await saveOrderToHistory(Number(userID), totalOrderPrice, materialIds,materialTypes,materialPrices );}
             // Sending the array of results as a JSON response
             res.json({material:results});
-        } else {
+        }
+         else {
             // Handling the case when materials is not an array or house_info is missing
             res.status(400).json({ error: 'Invalid input: materials should be an array, and house_info should be present' });
         }
@@ -295,16 +299,22 @@ router.post('/calcmaterial', async (req: Request, res: Response) => {
     }
 });
 
+
+
 router.get('/orderhistory', async (req: Request, res: Response) => {
     try {
         const userID: string | number = req.query.userID as string | number;
-
-        const orderHistory = await db.getOrderHistory(String(userID));
-        res.json({ orderHistory });
+        console.log(userID);
         
+        // Call the getOrderHistory function to fetch order history
+        const orderHistory = await db.getOrderHistory(String(userID));
+
+        // Respond with the entire order history array
+        res.json({ orderHistory });
         
     } catch (error) {
         // Handle errors
+        console.error('Error fetching order history:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

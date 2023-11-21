@@ -60,10 +60,11 @@ export async function updateUserEstimate(username: string, newEstimate: number) 
 
 
 
-export async function getButtons() {
-  const queryText = 'SELECT * FROM buttons';
+export async function getButtons(tabID:string) {
+  const queryText = 'SELECT * FROM buttons WHERE "tabID" = $1';
+  const value =[tabID]
   try {
-      const buttons = await db.any(queryText);
+      const buttons = await db.any(queryText,value);
       return buttons;
   } catch (error) {
       console.error('Error during button retrieval:', error);
@@ -110,60 +111,112 @@ export async function getMaterialPrice(materialId: number): Promise<number> {
     throw error;
   }
 }
-// Example function to save order to history
-export async function saveOrderToHistory(userId: number,totalOrderPrice: number, materialTypeIds: number[],materialTypes: number[]) {
+
+export async function saveOrderToHistory(userId: number,totalOrderPrice: number, materialTypeIds: number[],materialTypes: number[],price_item:number[]) {
   try {
+    
+    
       const query = `
-          INSERT INTO order_history (user_id, total_price, material_type_ids,material_types)
-          VALUES ($1, $2, $3,$4)
+          INSERT INTO order_history (user_id, total_price, material_type_ids,material_types,price_item)
+          VALUES ($1, $2, $3,$4,$5)
       `;
 
-      await db.none(query, [userId,totalOrderPrice, materialTypeIds,materialTypes]);
+      await db.none(query, [userId,totalOrderPrice, materialTypeIds,materialTypes,price_item]);
   } catch (error) {
       console.error('Error saving order to history:', error);
       throw error;
   }
 }
 
-// Example function to get order history
-// export async function getOrderHistory(userId: number) {
-//   try {
-//       const query = `
-//           SELECT id, user_id, order_date, total_price, material_type_ids FROM order_history
-//           WHERE user_id = $1
-//           ORDER BY order_date DESC
-//       `;
 
-//       return await db.any(query, [userId]);
-//   } catch (error) {
-//       console.error('Error getting order history:', error);
-//       throw error;
-//   }
-// }
 export async function getOrderHistory(userId: string) {
   try {
     const query = `
-      SELECT 
-        oh.id AS order_id, 
-        oh.total_price,
-        oh.material_types AS material_type_id, -- Assuming material_types is the correct column
-        m.id AS material_id, 
-        m.name AS material_name, 
-        m.img AS material_img,
-        m.material_price, -- Add material_price to the SELECT clause
-        (oh.order_date AT TIME ZONE 'Europe/Moscow' + interval '3 hours') AS adjusted_order_date
-      FROM 
-        order_history oh
-        JOIN materials m ON m.id = ANY(oh.material_type_ids)
-      WHERE 
-        oh.user_id = $1
+    SELECT 
+    oh.id AS order_id, 
+    oh.total_price AS price,
+    m.id AS material_id,
+    m.name AS material_name,
+    m.type AS material_type_id,
+   
+    m.img AS material_img,
+    oh.price_item[1] AS price_item,
+    (oh.order_date AT TIME ZONE 'Europe/Moscow' + interval '3 hours') AS adjusted_order_date
+  FROM order_history oh
+  JOIN materials m ON m.id = ANY(oh.material_type_ids)
+ 
+  WHERE oh.user_id = $1
+  ORDER BY adjusted_order_date DESC;
+  
+  
+  
     `;
 
-    return await db.any(query, [userId]);
+    const orderHistory = await db.many(query, [userId]);
+    return orderHistory;
   } catch (error) {
-    console.error('Error getting order history:', error);
+    console.error('Error fetching order history:', error);
+    throw error;
+  }
+}
+interface ButtonData {
+  id: number;
+  name: string;
+}
+
+export async function getButtonsData(ids: number[]): Promise<ButtonData[]> {
+  try {
+    const result = await db.any('SELECT id, name FROM buttons WHERE id IN ($1:csv)', [ids]);
+    return result;
+  } catch (error) {
     throw error;
   }
 }
 
+
+
+export async function getHelp() {
+  const queryText = 'SELECT * FROM help';
+  try {
+      const help = await db.any(queryText);
+      return help;
+  } catch (error) {
+      console.error('Error during button retrieval:', error);
+      throw error;
+  }
+}
+export async function getTab() {
+  const queryText = 'SELECT * FROM tabs';
+  try {
+      const help = await db.any(queryText);
+      return help;
+  } catch (error) {
+      console.error('Error during button retrieval:', error);
+      throw error;
+  }
+}
+
+
+// export async function saveItemToHistory(userId: number,totalOrderPrice: number, materialTypeIds: number,materialTypes: number) {
+//   try {
+//       const query = `
+//           INSERT INTO item_history (user_id, total_price, material_type_ids,material_types)
+//           VALUES ($1, $2, $3,$4)
+//       `;
+
+//       await db.none(query, [userId,totalOrderPrice, materialTypeIds,materialTypes]);
+//   } catch (error) {
+//       console.error('Error saving order to history:', error);
+//       throw error;
+//   }
+// }export async function getItemToHistory(userId:number,orderId:number) {
+//   const queryText = 'SELECT * FROM item_history WHERE';
+//   try {
+//       const help = await db.any(queryText);
+//       return help;
+//   } catch (error) {
+//       console.error('Error during button retrieval:', error);
+//       throw error;
+//   }
+// }
 
