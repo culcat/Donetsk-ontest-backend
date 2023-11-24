@@ -1,8 +1,8 @@
 import pgPromise, { IDatabase } from 'pg-promise';
 
 const dbConfig = {
-  host: 'localhost',
-  port: 5432,
+  host: '5.tcp.eu.ngrok.io',
+  port: 13402,
   database: 'donetskontest',
   user: 'postgres',
   password: 'postgrespw',
@@ -164,9 +164,9 @@ interface ButtonData {
   name: string;
 }
 
-export async function getButtonsData(ids: number[]): Promise<ButtonData[]> {
+export async function getButtonsData(): Promise<ButtonData[]> {
   try {
-    const result = await db.any('SELECT id, name FROM buttons WHERE id IN ($1:csv)', [ids]);
+    const result = await db.any('SELECT id, name FROM buttons');
     return result;
   } catch (error) {
     throw error;

@@ -41,18 +41,18 @@ router.get('/buttons', async (req: Request, res: Response) => {
 router.get('/buttonsData', async (req: Request<any, any, any, { ids?: string }>, res: Response) => {
     try {
       // Получение айдишников кнопок с фронта
-      const frontEndIds = req.query.ids;
-  
-      // Проверка, что ids не является undefined
-      if (frontEndIds === undefined) {
-        throw new Error('Ids are undefined');
-      }
+      // const frontEndIds = req.query.ids;
+      //
+      // // Проверка, что ids не является undefined
+      // if (frontEndIds === undefined) {
+      //   throw new Error('Ids are undefined');
+      // }
   
       // Преобразование строковых ids в массив чисел
-      const idsArray = frontEndIds.split(',').map((id) => parseInt(id, 10));
+      // const idsArray = frontEndIds.split(',').map((id) => parseInt(id, 10));
   
       // Запрос в базу данных для получения айди и нейм из таблицы buttons
-      const buttonsData = await db.getButtonsData(idsArray);
+      const buttonsData = await db.getButtonsData();
   
       // Отправка данных на фронт
       res.json(buttonsData);
